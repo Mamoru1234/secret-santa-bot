@@ -10,6 +10,8 @@ import { GameRoomEntity } from '../../db/entities/game-room.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChatSessionEntity, Role } from '../../db/entities/chat-session.entity';
 import { isUUID } from 'class-validator';
+import { ActiveStepEntity } from '../../db/entities/active-step.entity';
+import { WriteLetterHandler } from './write-letter.handler';
 
 interface AuthTokenOutput {
   room: GameRoomEntity;
@@ -23,6 +25,7 @@ export class AuthTokenHandler implements TgHandler {
     private readonly sessionGuardFactory: SessionGuardFactory,
     @InjectRepository(GameRoomEntity) private readonly gameRoomRepository: Repository<GameRoomEntity>,
     @InjectRepository(ChatSessionEntity) private readonly sessionRepository: Repository<ChatSessionEntity>,
+    @InjectRepository(ActiveStepEntity) private readonly activeStepRepository: Repository<ActiveStepEntity>,
   ) {}
 
   configure(bot: Telegraf<Context<Update>>): void {
@@ -44,7 +47,7 @@ export class AuthTokenHandler implements TgHandler {
     }
     const tokenAuth = await this.authToken(token);
     if (!tokenAuth) {
-      await ctx.sendMessage('Схоже що ти не дуже знаєн секрет компанії в якій граєш)');
+      await ctx.sendMessage('Схоже що ти не дуже знаєш секрет компанії в якій граєш)');
       return;
     }
     if (!ctx.chat.first_name || !ctx.chat.username || !ctx.chat.id) {
@@ -54,16 +57,21 @@ export class AuthTokenHandler implements TgHandler {
       });
       return;
     }
-    await this.sessionRepository.save([
-      {
-        gameRoom: tokenAuth.room,
-        role: tokenAuth.role,
-        chatId: `${ctx.chat.id}`,
-        firstName: `${ctx.chat.first_name}`,
-        userName: `${ctx.chat.username}`,
+    const session = await this.sessionRepository.save({
+      gameRoom: tokenAuth.room,
+      role: tokenAuth.role,
+      chatId: `${ctx.chat.id}`,
+      firstName: `${ctx.chat.first_name}`,
+      userName: `${ctx.chat.username}`,
+    });
+    await ctx.sendMessage('Please write a letter');
+    await this.activeStepRepository.save({
+      session,
+      type: WriteLetterHandler.WRITING_LETTER_STEP,
+      data: {
+        parts: [],
       },
-    ]);
-    await ctx.sendMessage('Here we go)');
+    });
   }
 
   private async authToken(token: string): Promise<AuthTokenOutput | null> {

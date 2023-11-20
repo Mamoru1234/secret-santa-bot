@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { GameRoomEntity } from './game-room.entity';
 
 export enum Role {
@@ -34,9 +34,6 @@ export class ChatSessionEntity {
     nullable: false,
   })
   role!: Role;
-
-  @RelationId((val: ChatSessionEntity) => val.gameRoom)
-  gameRoomId!: string;
 
   @ManyToOne(() => GameRoomEntity, {
     onDelete: 'CASCADE',

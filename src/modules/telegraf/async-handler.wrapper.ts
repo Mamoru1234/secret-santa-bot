@@ -7,6 +7,8 @@ export type BotHandler = (ctx: Context, next: NextFunction) => Promise<unknown>;
 
 export const asyncHandlerWrapper = (logger: Logger, handler: BotHandler) => (ctx: Context, next: NextFunction) =>
   handler(ctx, next).catch((e) => {
-    logger.warn('error during handler execution', { error: e });
+    // eslint-disable-next-line no-console
+    console.warn('Error during handler execution', e);
+    logger.warn('Error in handler');
     ctx.sendMessage('Сталася прикра помилка ;(');
   });
