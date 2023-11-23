@@ -10,11 +10,12 @@ import { ActiveStepEntity } from '../db/entities/active-step.entity';
 import { ActiveStepDataService } from './active-step-data.service';
 import { PlayerSantaLetterEntity } from '../db/entities/player-santa-letter.entity';
 import { TelegrafModule } from '../telegraf/telegraf.module';
+import { PlayerPairEntity } from '../db/entities/player-pair.entity';
 
 @Module({
   imports: [
     TelegrafModule,
-    TypeOrmModule.forFeature([GameRoomEntity, ChatSessionEntity, ActiveStepEntity, PlayerSantaLetterEntity]),
+    TypeOrmModule.forFeature([GameRoomEntity, ChatSessionEntity, ActiveStepEntity, PlayerSantaLetterEntity, PlayerPairEntity]),
     TgGuardsModule,
     TgSessionDataModule,
   ],

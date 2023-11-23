@@ -1,5 +1,5 @@
 import { uniqBy } from 'lodash';
-import { createGamePairs, hasWrongPlayers } from './game.utils';
+import { checkPair, createGamePairs, createGameWithoutPairs, hasWrongPlayers } from './game.utils';
 
 describe('game.utils', () => {
   describe('hasWrongPlayers', () => {
@@ -22,6 +22,23 @@ describe('game.utils', () => {
     ];
     generateCases(positiveCases, false);
     generateCases(negativeCases, true);
+  });
+
+  describe('checkPair', () => {
+    it('should work', () => {
+      expect(checkPair([1, 2, 0], [0, 2])).toBe(true);
+    });
+    it('should work case left part', () => {
+      expect(checkPair([2, 0, 1], [0, 2])).toBe(true);
+    });
+
+    it('should work case right part', () => {
+      expect(checkPair([2, 0, 1], [2, 0])).toBe(true);
+    });
+
+    it('should work case with no match', () => {
+      expect(checkPair([3, 0, 1, 2], [0, 2])).toBe(false);
+    });
   });
 
   describe('createGamePairs', () => {
@@ -56,6 +73,31 @@ describe('game.utils', () => {
       const nonPairSamples = uniqSamples.filter((it) => it[0] !== 1 && it[1] !== 0 && it[2] !== 3 && it[3] !== 2);
       expect(uniqSamples).toHaveLength(44);
       expect(nonPairSamples).toHaveLength(16);
+    });
+  });
+
+  describe('createGameWithoutPairs', () => {
+    it('should work', () => {
+      const game = createGameWithoutPairs(4, [
+        [0, 1],
+        [2, 3],
+      ]);
+      expect(game).toHaveLength(4);
+    });
+
+    it('should check entropy', () => {
+      const data: number[][] = [];
+      for (let i = 0; i < 50000; i++) {
+        data.push(
+          createGameWithoutPairs(8, [
+            [0, 1],
+            [2, 3],
+            [4, 5],
+          ]),
+        );
+      }
+      const uniqSamples = uniqBy(data, (it) => JSON.stringify(it));
+      expect(uniqSamples.length).toBeGreaterThan(6000);
     });
   });
 });

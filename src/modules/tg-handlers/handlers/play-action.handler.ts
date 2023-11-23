@@ -8,7 +8,8 @@ import { ChatSessionFetcher } from '../../tg-session-data/chat-session.fetcher';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ChatSessionEntity } from '../../db/entities/chat-session.entity';
 import { Repository } from 'typeorm';
-import { createGamePairs } from '../game/game.utils';
+import { createGameWithoutPairs } from '../game/game.utils';
+import { PlayerPairEntity } from '../../db/entities/player-pair.entity';
 
 export class PlayActionHandler implements TgHandler {
   private readonly logger = new Logger(PlayActionHandler.name);
@@ -18,6 +19,7 @@ export class PlayActionHandler implements TgHandler {
     private readonly sessionGuardFactory: SessionGuardFactory,
     private readonly sessionFetcher: ChatSessionFetcher,
     @InjectRepository(ChatSessionEntity) private readonly sessionRepository: Repository<ChatSessionEntity>,
+    @InjectRepository(PlayerPairEntity) private readonly playerPairRepository: Repository<PlayerPairEntity>,
   ) {}
 
   configure(bot: Telegraf<Context<Update>>): void {
@@ -37,10 +39,11 @@ export class PlayActionHandler implements TgHandler {
         letter: true,
       },
     });
-    const pairs = createGamePairs(roomSessions.length);
+    const pairs = await this.buildPairsRestriction(roomSessions);
+    const game = createGameWithoutPairs(roomSessions.length, pairs);
     for (let i = 0; i < pairs.length; i++) {
       const santaSession = roomSessions[i];
-      const playerSession = roomSessions[pairs[i]];
+      const playerSession = roomSessions[game[i]];
       const message = `Тобі випав гравець @${playerSession.userName}.
 Його лист:
 ${playerSession.letter.letter}
@@ -50,5 +53,21 @@ ${playerSession.letter.letter}
       await this.bot.telegram.sendMessage(santaSession.chatId, message);
     }
     await ctx.sendMessage('Листи всім розіслані)');
+  }
+
+  private async buildPairsRestriction(sessions: ChatSessionEntity[]): Promise<[number, number][]> {
+    const playerPairs = await this.playerPairRepository.find({
+      where: {
+        gameRoomId: sessions[0].gameRoomId,
+      },
+    });
+    return playerPairs.map((pair) => {
+      const aIndx = sessions.findIndex((it) => pair.aName === it.userName);
+      const bIndx = sessions.findIndex((it) => pair.bName === it.userName);
+      if (aIndx === -1 || bIndx === -1) {
+        throw new Error(`pair inalid ${pair.aName} - ${pair.bName}, ${pair.id}`);
+      }
+      return [aIndx, bIndx];
+    });
   }
 }
