@@ -18,12 +18,12 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm run test
-      # - name: Login to Registry
-      #   uses: docker/login-action@v2
-      #   with:
-      #     username: oleksiygontarpersonal
-      #     password: ${{ secrets.DOCKER_TOKEN }}
-      # - run: docker build -t oleksiygontarpersonal/secret-santa-bot:latest .
-      # - run: docker push oleksiygontarpersonal/secret-santa-bot:latest
+      - name: Login to Registry
+        uses: docker/login-action@v2
+        with:
+          username: oleksiygontarpersonal
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - run: docker build -t oleksiygontarpersonal/secret-santa-bot:latest .
+      - run: docker push oleksiygontarpersonal/secret-santa-bot:latest
 
 
