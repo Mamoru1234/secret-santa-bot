@@ -8,10 +8,11 @@ import { TgSessionDataModule } from '../tg-session-data/tg-session-data.module';
 import { ChatSessionEntity } from '../db/entities/chat-session.entity';
 import { ActiveStepEntity } from '../db/entities/active-step.entity';
 import { ActiveStepDataService } from './active-step-data.service';
+import { PlayerSantaLetterEntity } from '../db/entities/player-santa-letter.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([GameRoomEntity, ChatSessionEntity, ActiveStepEntity]),
+    TypeOrmModule.forFeature([GameRoomEntity, ChatSessionEntity, ActiveStepEntity, PlayerSantaLetterEntity]),
     TgGuardsModule,
     TgSessionDataModule,
   ],

@@ -7,6 +7,10 @@ import { SessionGuardFactory } from '../../tg-guards/session-guard.factory';
 import { Injectable, Logger } from '@nestjs/common';
 import { getTextFromCtx } from '../tg-context.utils';
 import { ActiveStepDataService } from '../active-step-data.service';
+import { Repository } from 'typeorm';
+import { PlayerSantaLetterEntity } from '../../db/entities/player-santa-letter.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ChatSessionFetcher } from '../../tg-session-data/chat-session.fetcher';
 
 interface WritingLetterData {
   parts: string[];
@@ -33,6 +37,8 @@ export class WriteLetterHandler implements TgHandler {
     private readonly activeStepGuardFactory: ActiveStepGuardFactory,
     private readonly sessionGuardFactory: SessionGuardFactory,
     private readonly activeStepDataService: ActiveStepDataService,
+    private readonly chatSessionFetcher: ChatSessionFetcher,
+    @InjectRepository(PlayerSantaLetterEntity) private readonly playerSantaLetterRepo: Repository<PlayerSantaLetterEntity>,
   ) {}
 
   configure(bot: Telegraf<Context<Update>>): void {
@@ -96,14 +102,22 @@ export class WriteLetterHandler implements TgHandler {
       await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.WRITING_LETTER_STEP, {
         parts: [],
       });
+      await ctx.sendMessage('Ну що ж давай спробуємо написати лист з нуля');
       return;
     }
     if (text !== 'Все вірно') {
       await ctx.sendMessage('Щось не зрозуміле ти таке написав', letterConfirKeyboard());
     }
     const { letter } = await this.activeStepDataService.getData<ConfirmLetterData>(ctx);
+    const session = await this.chatSessionFetcher.require(ctx);
     this.logger.log('Saving letter', {
       letter,
+      session,
     });
+    await this.playerSantaLetterRepo.save({
+      session,
+      letter,
+    });
+    await ctx.sendMessage('Letter is saved wait for play');
   }
 }
