@@ -5,7 +5,7 @@ import { ActiveStepGuardFactory } from '../../tg-guards/active-step-guard.factor
 import { combine, runWithGuard } from '../../telegraf/run-with-guard.wrapper';
 import { SessionGuardFactory } from '../../tg-guards/session-guard.factory';
 import { Injectable, Logger } from '@nestjs/common';
-import { getTextFromCtx } from '../tg-context.utils';
+import { getTextFromCtx, getTextFromEditedCtx } from '../tg-context.utils';
 import { ActiveStepDataService } from '../active-step-data.service';
 import { Repository } from 'typeorm';
 import { PlayerSantaLetterEntity } from '../../db/entities/player-santa-letter.entity';
@@ -13,22 +13,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ChatSessionFetcher } from '../../tg-session-data/chat-session.fetcher';
 
 interface WritingLetterData {
-  parts: string[];
+  letter?: string;
 }
 
-interface ConfirmLetterData {
-  letter: string;
-}
+const SEND_LETTER = 'Відправити Санті ✉️';
+const LETTER_SENT_MESSAGE = `Твій лист в дорозі.💫 Тепер чекаємо на розіграш листів між учасниками.
+Щоб подивитись статус учасників - надішли команду /members.`;
 
 function letterConfirKeyboard() {
-  return Markup.keyboard([['Відправити Санті']])
+  return Markup.keyboard([[SEND_LETTER]])
     .oneTime()
     .resize();
 }
-/*
-Only one letter message
-Change to inline keyboard
-*/
+
 @Injectable()
 export class WriteLetterHandler implements TgHandler {
   static WRITING_LETTER_STEP = 'WRITING_LETTER_STEP';
@@ -55,73 +52,43 @@ export class WriteLetterHandler implements TgHandler {
         (ctx) => this.handleWritingLetter(ctx),
       ),
     );
-    bot.use(
-      runWithGuard(
-        combine(
-          this.sessionGuardFactory.withSession(),
-          this.activeStepGuardFactory.byType(WriteLetterHandler.CONFIRM_LETTER_STEP),
-        ),
-        this.logger,
-        (ctx) => this.handleLetterConfimation(ctx),
-      ),
-    );
   }
 
   async handleWritingLetter(ctx: Context): Promise<void> {
-    const text = getTextFromCtx(ctx);
-    if (!text) {
-      await ctx.sendMessage('Треба надіслати текст');
+    const editedText = getTextFromEditedCtx(ctx);
+    if (editedText === SEND_LETTER) {
+      await ctx.sendMessage('Ой вей на таке не варто редагувати повідомлення.');
       return;
     }
-    const { parts = [] } = await this.activeStepDataService.getData<WritingLetterData>(ctx);
-    if (text === 'Кінець листа') {
-      if (!parts.length) {
-        await ctx.sendMessage('Ееее ні треба написати хоч щось.');
+    if (editedText) {
+      await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.WRITING_LETTER_STEP, {
+        letter: editedText,
+      });
+      return;
+    }
+    const text = getTextFromCtx(ctx);
+    if (text === SEND_LETTER) {
+      const { letter } = await this.activeStepDataService.getData<WritingLetterData>(ctx);
+      if (!letter) {
+        await ctx.sendMessage('Я не маю що відправити');
         return;
       }
-      const letter = parts.join('\n');
-      await ctx.sendMessage('Фінальний варіант листа:');
-      await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.CONFIRM_LETTER_STEP, {
+      await ctx.sendMessage(LETTER_SENT_MESSAGE);
+      const session = await this.chatSessionFetcher.require(ctx);
+      await this.playerSantaLetterRepo.save({
+        session,
         letter,
       });
-      await ctx.sendMessage(letter, letterConfirKeyboard());
+      await this.activeStepDataService.updateStepData(ctx, 'INIT', {});
       return;
     }
-    const newParts = parts.concat([text]);
-    await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.WRITING_LETTER_STEP, {
-      parts: newParts,
-    });
-    await ctx.sendMessage('Ok you are writing letter');
-    await ctx.sendMessage(newParts.join('\n'));
-  }
-
-  async handleLetterConfimation(ctx: Context): Promise<void> {
-    const text = getTextFromCtx(ctx);
     if (!text) {
       await ctx.sendMessage('Треба надіслати текст');
       return;
     }
-    if (text === 'Давай заново') {
-      await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.WRITING_LETTER_STEP, {
-        parts: [],
-      });
-      await ctx.sendMessage('Ну що ж давай спробуємо написати лист з нуля');
-      return;
-    }
-    if (text !== 'Все вірно') {
-      await ctx.sendMessage('Щось не зрозуміле ти таке написав', letterConfirKeyboard());
-    }
-    const { letter } = await this.activeStepDataService.getData<ConfirmLetterData>(ctx);
-    const session = await this.chatSessionFetcher.require(ctx);
-    this.logger.log('Saving letter', {
-      letter,
-      session,
+    await this.activeStepDataService.updateStepData(ctx, WriteLetterHandler.WRITING_LETTER_STEP, {
+      letter: text,
     });
-    await this.playerSantaLetterRepo.save({
-      session,
-      letter,
-    });
-    await ctx.sendMessage('Letter is saved wait for play');
-    await this.activeStepDataService.updateStepData(ctx, 'INIT', {});
+    await ctx.sendMessage('Дякую, я отримав листа. Натисни "відправити", якщо впевнений в тексті.', letterConfirKeyboard());
   }
 }

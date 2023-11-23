@@ -31,7 +31,7 @@ export class MembersCommandHandler implements TgHandler {
   async handle(ctx: Context) {
     const activeStep = await this.activeStepFetcher.get(ctx);
     if (activeStep?.type !== 'INIT') {
-      await ctx.sendMessage('Wrong state please complete current step');
+      await ctx.sendMessage('На жаль, цю команду неможливо зараз виконати.');
       return;
     }
     const session = await this.sessionFetcher.require(ctx);
@@ -44,9 +44,9 @@ export class MembersCommandHandler implements TgHandler {
       },
     });
     const players = roomSessions
-      .map((it) => `@${it.userName} ${it.firstName} ${it.letter ? 'done' : 'in progress'}`)
+      .map((it) => `@${it.userName} ${it.letter ? 'лист написано ✅' : 'ще пише листа 📝'}`)
       .join('\n');
-    await ctx.sendMessage('Members goes here');
+    await ctx.sendMessage('Зараз зареєстровані наступні гравці:');
     const allPlayerHasLetter = roomSessions.every((it) => Boolean(it.letter));
     const extra = session.role === Role.ADMIN ? this.buildAdminKeyboard(allPlayerHasLetter) : undefined;
     await ctx.sendMessage(players, extra);

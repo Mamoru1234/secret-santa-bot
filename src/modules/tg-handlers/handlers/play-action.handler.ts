@@ -38,12 +38,17 @@ export class PlayActionHandler implements TgHandler {
       },
     });
     const pairs = createGamePairs(roomSessions.length);
-    await ctx.sendMessage('Let game begin');
     for (let i = 0; i < pairs.length; i++) {
       const santaSession = roomSessions[i];
       const playerSession = roomSessions[pairs[i]];
-      const message = `Your player ${playerSession.firstName} @${playerSession.userName}`;
+      const message = `Тобі випав гравець @${playerSession.userName}.
+Його лист:
+${playerSession.letter.letter}
+
+Біжи хутчіш купувати подаруночок 🎁🎅🎁
+`;
       await this.bot.telegram.sendMessage(santaSession.chatId, message);
     }
+    await ctx.sendMessage('Листи всім розіслані)');
   }
 }

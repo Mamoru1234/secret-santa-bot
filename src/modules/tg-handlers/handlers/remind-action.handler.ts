@@ -38,7 +38,7 @@ export class RemindActionHandler implements TgHandler {
       },
     });
     const sessionsToRemind = roomSessions.filter((it) => !it.letter);
-    await Promise.all(sessionsToRemind.map((it) => this.bot.telegram.sendMessage(it.chatId, 'Будь-ласка допиши лист)')));
+    await Promise.all(sessionsToRemind.map((it) => this.bot.telegram.sendMessage(it.chatId, 'Напиши листа, будь ласка🙏')));
     await ctx.sendMessage('Done');
   }
 }

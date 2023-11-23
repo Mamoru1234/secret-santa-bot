@@ -17,6 +17,11 @@ interface AuthTokenOutput {
   room: GameRoomEntity;
   role: Role;
 }
+const WELCOME_TEXT = `Вітаю в грі.
+Правила гри: кожен учасник надсилає листа Санті. Коли всі надішлють листи - їх буде розіграно між гравцями.
+Будь ласка, надішли мені текст листа наступним повідомленням.
+В тебе є можливість редагувати повідомлення до відправки.
+Після відправки лист вже змінити неможливо(такі правила укрпошти). Тому будь уважним🙂`;
 
 export class AuthTokenHandler implements TgHandler {
   private readonly logger = new Logger(AuthTokenHandler.name);
@@ -47,7 +52,7 @@ export class AuthTokenHandler implements TgHandler {
     }
     const tokenAuth = await this.authToken(token);
     if (!tokenAuth) {
-      await ctx.sendMessage('Схоже що ти не дуже знаєш секрет компанії в якій граєш)');
+      await ctx.sendMessage('Схоже, що ти не дуже знаєш секрет компанії в якій граєш)');
       return;
     }
     if (!ctx.chat.first_name || !ctx.chat.username || !ctx.chat.id) {
@@ -64,13 +69,11 @@ export class AuthTokenHandler implements TgHandler {
       firstName: `${ctx.chat.first_name}`,
       userName: `${ctx.chat.username}`,
     });
-    await ctx.sendMessage('Please write a letter');
+    await ctx.sendMessage(WELCOME_TEXT);
     await this.activeStepRepository.save({
       session,
       type: WriteLetterHandler.WRITING_LETTER_STEP,
-      data: {
-        parts: [],
-      },
+      data: {},
     });
   }
 
