@@ -21,11 +21,14 @@ interface ConfirmLetterData {
 }
 
 function letterConfirKeyboard() {
-  return Markup.keyboard([['Все вірно', 'Давай заново']])
+  return Markup.keyboard([['Відправити Санті']])
     .oneTime()
     .resize();
 }
-
+/*
+Only one letter message
+Change to inline keyboard
+*/
 @Injectable()
 export class WriteLetterHandler implements TgHandler {
   static WRITING_LETTER_STEP = 'WRITING_LETTER_STEP';
@@ -119,5 +122,6 @@ export class WriteLetterHandler implements TgHandler {
       letter,
     });
     await ctx.sendMessage('Letter is saved wait for play');
+    await this.activeStepDataService.updateStepData(ctx, 'INIT', {});
   }
 }

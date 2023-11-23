@@ -1,5 +1,6 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
 import { GameRoomEntity } from './game-room.entity';
+import { PlayerSantaLetterEntity } from './player-santa-letter.entity';
 
 export enum Role {
   ADMIN = 'ADMIN',
@@ -35,10 +36,17 @@ export class ChatSessionEntity {
   })
   role!: Role;
 
+  @RelationId((val: ChatSessionEntity) => val.gameRoom)
+  @Column()
+  gameRoomId!: string;
+
   @ManyToOne(() => GameRoomEntity, {
     onDelete: 'CASCADE',
     nullable: false,
   })
   @JoinColumn()
   gameRoom!: GameRoomEntity;
+
+  @OneToOne(() => PlayerSantaLetterEntity, (letter) => letter.session)
+  letter!: PlayerSantaLetterEntity;
 }

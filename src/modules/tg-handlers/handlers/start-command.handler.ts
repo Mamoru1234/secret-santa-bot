@@ -23,7 +23,7 @@ export class StartCommandHandler implements TgHandler {
           this.logger.log('Cleanning-up existing session');
           await this.sessionRepository.remove(session);
         }
-        await ctx.sendMessage('Йо-хо-хо чи знаєш ти секрет для своєї гри?');
+        await ctx.sendMessage('Йо-хо-хо, чи знаєш ти секрет для своєї гри?🤔');
       }),
     );
   }
