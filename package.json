@@ -9,6 +9,7 @@
     "lint": "eslint ./src",
     "format": "npx prettier --write .",
     "typeorm": "ts-node -r dotenv/config node_modules/.bin/typeorm -d ./src/modules/db/data-source.ts",
+    "prod:migration:run": "node -r dotenv/config ./node_modules/typeorm/cli.js -d ./dist/modules/db/data-source.js migration:run",
     "test": "jest"
   },
   "keywords": [],
