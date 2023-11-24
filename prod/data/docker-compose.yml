@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  bot-db:
+    image: postgres:16
+    restart: always
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d/:ro
+      - bot-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD:?missing_db_password}
+
+  bot:
+    image: oleksiygontarpersonal/secret-santa-bot:latest
+    restart: always
+    environment:
+      APP_DB_HOST: bot-db
+      APP_DB_USERNAME: postgres
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?missing_db_password}
+      APP_BOT_TOKEN: ${APP_BOT_TOKEN:?missing_bot_token}
+
+volumes:
+  bot-data:

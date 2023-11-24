@@ -41,9 +41,13 @@ export class PlayActionHandler implements TgHandler {
     });
     const pairs = await this.buildPairsRestriction(roomSessions);
     const game = createGameWithoutPairs(roomSessions.length, pairs);
-    for (let i = 0; i < pairs.length; i++) {
+    for (let i = 0; i < game.length; i++) {
       const santaSession = roomSessions[i];
       const playerSession = roomSessions[game[i]];
+      this.logger.log('Secret santa choise:', {
+        santaSession: santaSession.userName,
+        playerSession: playerSession.userName,
+      });
       const message = `Тобі випав гравець @${playerSession.userName}.
 Його лист:
 ${playerSession.letter.letter}
